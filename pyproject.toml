@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "kursach"
+version = "0.1.0"
+description = ""
+authors = ["dmitriyvakulenko <denver@trafficstars.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+uvicorn = "^0.18.3"
+pydantic = "^1.10.2"
+alembic = "^1.8.1"
+asyncpg = "^0.26.0"
+databases = "^0.6.1"
+psycopg2-binary = "^2.9.3"
+cryptography = "^38.0.1"
+crypto = "^1.4.1"
+python-dotenv = "^0.21.0"
+pybase64 = "^1.2.3"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
