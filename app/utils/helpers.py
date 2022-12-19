@@ -1,16 +1,31 @@
-from datetime import datetime
 from logging import getLogger
 import json
 import zlib
 import base64
+from typing import Optional
+from datetime import datetime, timedelta, time
 from cryptography.fernet import Fernet
+import jwt
 
 from app.config import config
 
 log = getLogger(config.APP_NAME)
 
-
+token_expiration_time = config.JWT_TOKEN_EXPIRATION_TIME
 key_token = config.SECRET_TOKEN_KEY
+
+
+def create_access_token(data: dict):
+    to_encode = data.copy()
+    access_token_expires = datetime.utcnow() + timedelta(minutes=token_expiration_time)
+    to_encode.update({"exp": access_token_expires})
+    encoded_jwt = jwt.encode(to_encode, key_token, algorithm='HS256')
+    return encoded_jwt
+
+
+def decode_access_token(jwt_token):
+    data = jwt.decode(jwt_token, key_token, algorithms=["HS256"])
+    return data
 
 
 def crypto_encode(params):

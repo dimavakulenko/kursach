@@ -4,8 +4,8 @@ import hashlib
 import base64
 from fastapi import APIRouter, Query, Path
 
-from app.crud import create_user, get_verified_user
-from app.utils.helpers import crypto_encode, user_information_decoder
+from app.crud import create_user, get_verified_user, check_user_existence
+from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
 
 router = APIRouter(
@@ -39,11 +39,14 @@ async def executor_login(
         email: str = Query(...),
         password: str = Query(...),
 ):
-    pass
+    check_user_exist = await check_user_existence(crypto_encode(email),
+                                                  crypto_encode(password))
+    jwt_token = create_access_token({"user_id": check_user_exist.id})
+    return jwt_token
 
 
 @router.get(
-    "/executor/{id}",
+    "/executor/customer/{id}",
     response_model=InformationAboutUser
 )
 async def get_executor(
@@ -51,8 +54,8 @@ async def get_executor(
 ):
     user_info = await get_verified_user(id)
     return {
-        'name': user_information_decoder(user_info['name'].encode('utf-8')),
-        'second_name': user_information_decoder(user_info['second_name'].encode('utf-8')),
+        'name': crypto_decode(user_info['name'].encode('utf-8')),
+        'second_name': crypto_decode(user_info['second_name'].encode('utf-8')),
         'photo_url': user_info['photo_url'],
         'country': user_info['country'],
     }

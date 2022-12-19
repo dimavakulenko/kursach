@@ -16,6 +16,7 @@ cryptography = "^38.0.1"
 crypto = "^1.4.1"
 python-dotenv = "^0.21.0"
 pybase64 = "^1.2.3"
+PyJWT = "^2.6.0"
 
 [tool.poetry.dev-dependencies]
 

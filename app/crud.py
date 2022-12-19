@@ -10,6 +10,34 @@ from app.database import database
 from app.models.database import executor, Executor
 
 
+async def check_email_existence(
+        email: bytes
+):
+    query = '''SELECT FROM public.executors WHERE email = :email'''
+    email_check = await database.fetch_one(query=query,
+                                           values={
+                                               'email': email.decode('utf-8'),
+                                           }
+                                           )
+    return email_check
+
+
+async def check_user_existence(
+        email: bytes,
+        password: bytes
+):
+    query = '''SELECT FROM public.executors WHERE email = :email and password = :password'''
+    user_check = await database.fetch_one(query=query,
+                                           values={
+                                               'email': email.decode('utf-8'),
+                                               'password': password.decode('utf-8'),
+                                           }
+                                           )
+    if user_check is None:
+        raise HTTPException(HTTPStatus.NOT_FOUND, detail='user does not exist')
+    return user_check
+
+
 async def create_user(
         email: bytes,
         password: bytes,
@@ -21,12 +49,7 @@ async def create_user(
         country: str,
         city: str,
 ):
-    query = '''SELECT * FROM public.executors WHERE email = :email'''
-    email_check = await database.fetch_one(query=query,
-                                           values={
-                                               'email': email.decode('utf-8'),
-                                           }
-                                           )
+    email_check = await check_email_existence(email)
     if email_check is not None:
         raise HTTPException(HTTPStatus.CONFLICT, detail='user already exist')
     query = '''INSERT INTO public.executors (id,email,password,name,second_name,birth_date,photo_url,phone_number,
