@@ -11,9 +11,10 @@ from app.models.database import executor, Executor
 
 
 async def check_email_existence(
-        email: bytes
+        email: bytes,
+        role: str
 ):
-    query = '''SELECT FROM public.executors WHERE email = :email'''
+    query = '''SELECT FROM public.{} WHERE email = :email'''.format('customers' if role=='customer' else 'executors')
     email_check = await database.fetch_one(query=query,
                                            values={
                                                'email': email.decode('utf-8'),
@@ -24,18 +25,57 @@ async def check_email_existence(
 
 async def check_user_existence(
         email: bytes,
-        password: bytes
+        password: bytes,
+        table: str
 ):
-    query = '''SELECT FROM public.executors WHERE email = :email and password = :password'''
+    query = '''SELECT FROM public.{} WHERE email = :email and password = :password'''.format(table)
     user_check = await database.fetch_one(query=query,
-                                           values={
-                                               'email': email.decode('utf-8'),
-                                               'password': password.decode('utf-8'),
-                                           }
-                                           )
+                                          values={
+                                              'email': email.decode('utf-8'),
+                                              'password': password.decode('utf-8'),
+                                          }
+                                          )
     if user_check is None:
         raise HTTPException(HTTPStatus.NOT_FOUND, detail='user does not exist')
     return user_check
+
+
+async def get_list_orders(
+        type: str
+):
+    query = '''select title, price, date from orders where type_id =(select id from order_types where name = :type) 
+    order by date desc '''
+    orders = await database.fetch_all(query=query,
+                                      values={
+                                          'type': type,
+                                      }
+                                      )
+    return orders
+
+
+async def get_list_orders_by_customer_id(
+        customer_id: uuid.UUID
+):
+    query = '''select title, price, date from orders where customer_id =:customer_id
+    order by date desc '''
+    orders = await database.fetch_one(query=query,
+                                      values={
+                                          'customer_id': customer_id,
+                                      }
+                                      )
+    return orders
+
+
+async def get_role_id(
+        role: str
+):
+    query = '''SELECT id FROM public.roles where name ilike :role'''
+    role_id = await database.fetch_one(query=query,
+                                       values={
+                                           'role': role
+                                       }
+                                       )
+    return role_id.id
 
 
 async def create_user(
@@ -48,14 +88,16 @@ async def create_user(
         phone_number: str,
         country: str,
         city: str,
+        role: str,
 ):
-    email_check = await check_email_existence(email)
+    email_check = await check_email_existence(email, role)
     if email_check is not None:
         raise HTTPException(HTTPStatus.CONFLICT, detail='user already exist')
-    query = '''INSERT INTO public.executors (id,email,password,name,second_name,birth_date,photo_url,phone_number,
+    role_id = await get_role_id(role=role)
+    query = '''INSERT INTO public.{} (id,email,password,name,second_name,birth_date,photo_url,phone_number,
     country,city,role_id)
-    values (:id,:email,:password,:name,:second_name,TO_DATE(:birth_date,'DDMMYYYY'),:photo_url,:phone_number,
-    :country,:city, :role_id)'''
+    values (:id,:email,:password,:name,:second_name,TO_DATE(:birth_date,'DD.MM.YYYY'),:photo_url,:phone_number,
+    :country,:city, :role_id)'''.format('customers' if role=='customer' else 'executors')
     add_new_user = await database.fetch_one(query=query,
                                             values={
                                                 'id': uuid.uuid4(),
@@ -68,13 +110,13 @@ async def create_user(
                                                 'phone_number': phone_number,
                                                 'country': country,
                                                 'city': city,
-                                                'role_id': 'cdfa1315-68e9-4ff9-b3f9-f5ff38a2bdca',
+                                                'role_id': role_id,
                                             }
                                             )
 
 
-async def get_verified_user(id: int):
-    query = '''select * from public.users where id=:id'''
+async def get_verified_user(id: uuid.UUID):
+    query = '''select * from public.customers where id=:id'''
     user_info = await database.fetch_one(query, values={'id': id})
     if user_info is None:
         raise HTTPException(status_code=404, detail="User not found")

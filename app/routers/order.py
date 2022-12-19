@@ -10,3 +10,4 @@ router = FastAPI(
 async def create_new_order(
 
 ):
+    pass

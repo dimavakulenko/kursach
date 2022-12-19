@@ -4,7 +4,7 @@ from fastapi import FastAPI
 
 from app.database import database
 from app.config import config
-from app.routers import executor
+from app.routers import executor, customer
 
 app = FastAPI(
     title=config.APP_NAME
@@ -12,6 +12,7 @@ app = FastAPI(
 
 
 app.include_router(executor.router)
+app.include_router(customer.router)
 
 
 @app.on_event("shutdown")
