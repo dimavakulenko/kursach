@@ -4,17 +4,19 @@ from http import HTTPStatus
 import uuid
 from typing import Optional
 
+import asyncpg.exceptions
 from fastapi import HTTPException
 
 from app.database import database
 from app.models.database import executor, Executor
+from app.utils.helpers import crypto_decode
 
 
 async def check_email_existence(
         email: bytes,
         role: str
 ):
-    query = '''SELECT FROM public.{} WHERE email = :email'''.format('customers' if role=='customer' else 'executors')
+    query = '''SELECT FROM public.{} WHERE email = :email'''.format('customers' if role == 'customer' else 'executors')
     email_check = await database.fetch_one(query=query,
                                            values={
                                                'email': email.decode('utf-8'),
@@ -97,7 +99,7 @@ async def create_user(
     query = '''INSERT INTO public.{} (id,email,password,name,second_name,birth_date,photo_url,phone_number,
     country,city,role_id)
     values (:id,:email,:password,:name,:second_name,TO_DATE(:birth_date,'DD.MM.YYYY'),:photo_url,:phone_number,
-    :country,:city, :role_id)'''.format('customers' if role=='customer' else 'executors')
+    :country,:city, :role_id)'''.format('customers' if role == 'customer' else 'executors')
     add_new_user = await database.fetch_one(query=query,
                                             values={
                                                 'id': uuid.uuid4(),
@@ -115,14 +117,71 @@ async def create_user(
                                             )
 
 
-async def get_verified_user(id: uuid.UUID):
+async def get_verified_customer(id: uuid.UUID):
     query = '''select * from public.customers where id=:id'''
-    user_info = await database.fetch_one(query, values={'id': id})
-    if user_info is None:
+    customer_info = await database.fetch_one(query, values={'id': id})
+    if customer_info is None:
         raise HTTPException(status_code=404, detail="User not found")
     return {
-        'name': user_info.name,
-        'second_name': user_info.second_name,
-        'photo_url': user_info.photo_url,
-        'country': user_info.country,
+        'name': customer_info.name,
+        'second_name': customer_info.second_name,
+        'photo_url': customer_info.photo_url,
+        'country': customer_info.country,
     }
+
+
+async def get_verified_executor(id: uuid.UUID):
+    query = '''select * from public.executors where id=:id'''
+    executor_info = await database.fetch_one(query, values={'id': id})
+    if executor_info is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {
+        'name': crypto_decode(executor_info.name),
+        'second_name': crypto_decode(executor_info.second_name),
+        'photo_url': executor_info.photo_url,
+        'country': executor_info.country,
+    }
+
+
+async def create_order(customer_id: str, title: str, description: str, files: str, price: float, type: str):
+    query = '''SELECT id FROM order_types where name ilike :type'''
+    type_id = await database.fetch_one(query, values={'type': type})
+    if type_id is None:
+        raise HTTPException(status_code=404, detail="This order type does not exist")
+    query = '''INSERT INTO orders (id, customer_id, title, description, files, price, type_id, date) 
+    values (:id, :customer_id, :title, :description, :files, :price, :type_id, :date)'''
+    try:
+        order_create = await database.fetch_one(query, values={'id': uuid.uuid4(),
+                                                               'customer_id': customer_id,
+                                                               'title': title,
+                                                               'description': description,
+                                                               'files': files,
+                                                               'price': str(price),
+                                                               'type_id': type_id.id,
+                                                               'date': datetime.datetime.today()
+                                                               })
+    except asyncpg.exceptions.DataError:
+        raise HTTPException(status_code=422, detail='Wrong order parameters type')
+
+
+async def update_order(order_id: uuid.UUID, title: str, description: str, files: str, price: float, type: str):
+    query = '''SELECT * FROM orders where id=:id'''
+    order_existance = await database.fetch_one(query, values={'id': order_id})
+    if order_existance is None:
+        raise HTTPException(status_code=404, detail="This order does not exist")
+    query = '''SELECT id FROM order_types where name ilike :type'''
+    type_id = await database.fetch_one(query, values={'type': type})
+    if type_id is None:
+        raise HTTPException(status_code=404, detail="This order type does not exist")
+    query = '''UPDATE orders SET title=:title, description = :description, files =:files, price=:price, 
+                                                        type_id=:type_id where id=:id'''
+    try:
+        order_update = await database.fetch_one(query, values={'id': order_id,
+                                                               'title': title,
+                                                               'description': description,
+                                                               'files': files,
+                                                               'price': str(price),
+                                                               'type_id': type_id.id,
+                                                               })
+    except asyncpg.exceptions.DataError:
+        raise HTTPException(status_code=422, detail='Wrong order parameters type')

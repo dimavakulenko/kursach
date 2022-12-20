@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS executors (
     email TEXT NOT NULL,
     password TEXT NOT NULL,
     name TEXT NOT NULL,
-    second_name NOT NULL,
+    second_name TEXT NOT NULL,
     birth_date TEXT not null,
     photo_url TEXT,
     phone_number TEXT,
@@ -27,9 +27,9 @@ create table roles( id UUID primary key, name TEXT NOT NULL);
 create table reviews(id UUID primary key, customer_id UUID NOT NULL, executor_id UUID NOT NULL, text TEXT,rating FLOAT);
 create table comments(id UUID primary key, order_id UUID NOT NULL, executor_id UUID NOT NULL, confirmed bool);
 create table status (id UUID primary key, name TEXT NOT NULL);
-create table deals (id UUID primary key, comment_id UUID NOT NULL, deal_status_executor UUID, deal_status_customer UUID, files INET);
+create table deals (id UUID primary key, comment_id UUID NOT NULL, deal_status_executor UUID, deal_status_customer UUID, files TEXT);
 create table order_types(id UUID primary key, name TEXT, description TEXT);
-create table orders(id UUID primary key, customer_id UUID NOT NULL, title TEXT, description TEXT, files INET, price money, type_id UUID NOT NULL, date date);
+create table orders(id UUID primary key, customer_id UUID NOT NULL, title TEXT, description TEXT, files TEXT, price money, type_id UUID NOT NULL, date date);
 create table order_completed( id UUID primary key, deal_id UUID NOT NULL, price_to_resale money, agreement_to_resale BOOL);
 create table basket( id UUID primary key, completed_order_id UUID NOT NULL, customer_id UUID NOT NULL);
 alter table reviews add constraint fk_reviews_customer_id foreign key(customer_id) references customers (id);

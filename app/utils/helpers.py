@@ -34,7 +34,8 @@ def crypto_encode(params):
 
 
 def crypto_decode(params):
-    decrypted_text = base64.b64decode(params).decode('utf-8')
+    asd =params.encode('utf-8')
+    decrypted_text = base64.b64decode(params.encode('utf-8') + b'==')
     return decrypted_text
 
 

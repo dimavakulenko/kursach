@@ -5,7 +5,7 @@ import hashlib
 import base64
 from fastapi import APIRouter, Query, Path
 
-from app.crud import create_user, get_verified_user, check_user_existence, get_list_orders, get_list_orders_by_customer_id
+from app.crud import create_user, get_verified_customer, check_user_existence, get_list_orders, get_list_orders_by_customer_id
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
 

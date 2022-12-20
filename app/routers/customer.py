@@ -7,7 +7,8 @@ import base64
 import fastapi
 from fastapi import APIRouter, Query, Path
 
-from app.crud import create_user, get_verified_user, check_user_existence, get_list_orders, get_list_orders_by_customer_id
+from app.crud import create_user, get_verified_executor, check_user_existence, \
+    get_list_orders, get_list_orders_by_customer_id, create_order, update_order
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
 
@@ -47,3 +48,42 @@ async def customer_login(
                                                   crypto_encode(password), table='customers')
     jwt_token = create_access_token({"user_id": check_user_exist.id})
     return {"access_token": jwt_token, "token_type": "Bearer"}
+
+
+@router.get(
+    "/executor/{executor_id}"
+)
+async def executor_info(
+        executor_id: uuid.UUID = Path(...)
+):
+    customer_info = await get_verified_executor(executor_id)
+    return customer_info
+
+
+@router.post(
+    "/order"
+)
+async def order_create(
+        user_id: str = Query(...),
+        title: str = Query(max_length=50),
+        description: str = Query(max_length=300),
+        files: str = Query(description='file links'),
+        price: float = Query(...),
+        type: str = Query(max_length=20)
+):
+    _ = await create_order(user_id, title, description, files, price, type)
+
+
+@router.post(
+    "/order/update"
+)
+async def order_update(
+        order_id: uuid.UUID = Query(...),
+        title: str = Query(max_length=50),
+        description: str = Query(max_length=300),
+        files: str = Query(description='file links'),
+        price: float = Query(...),
+        type: str = Query(...)
+):
+    _ = await update_order(order_id, title, description, files, price, type)
+
