@@ -5,12 +5,13 @@ import hashlib
 import base64
 
 import fastapi
-from fastapi import APIRouter, Query, Path
+from fastapi import APIRouter, Query, Path, Depends
 
 from app.crud import create_user, get_verified_executor, check_user_existence, \
-    get_list_orders, get_list_orders_by_customer_id, create_order, update_order
+    get_list_orders, get_list_orders_by_customer_id, create_order, update_order,order_delete
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
+from app.utils.token_decode import Token
 
 router = fastapi.APIRouter(
     prefix='/customer',
@@ -46,7 +47,7 @@ async def customer_login(
 ):
     check_user_exist = await check_user_existence(crypto_encode(email),
                                                   crypto_encode(password), table='customers')
-    jwt_token = create_access_token({"user_id": check_user_exist.id})
+    jwt_token = create_access_token({"user_id": str(check_user_exist.id)})
     return {"access_token": jwt_token, "token_type": "Bearer"}
 
 
@@ -69,9 +70,12 @@ async def order_create(
         description: str = Query(max_length=300),
         files: str = Query(description='file links'),
         price: float = Query(...),
-        type: str = Query(max_length=20)
+        type: str = Query(max_length=20),
+        token: Token = Depends()
 ):
-    _ = await create_order(user_id, title, description, files, price, type)
+    customer_id = token.token_data['user_id']
+    _ = await create_order(customer_id, title, description, files, price, type)
+    a = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjpudWxsLCJleHAiOjE2NzE4MjU0MDF9.RDH_xsKGXIj37gajO8X-IViLvEUmO2yxymJqR58sWV8'
 
 
 @router.post(
@@ -87,3 +91,11 @@ async def order_update(
 ):
     _ = await update_order(order_id, title, description, files, price, type)
 
+
+@router.delete(
+    "/order/{order_id}/delete"
+)
+async def order_delete(
+        order_id: uuid.UUID = Path(...),
+):
+    _ = await order_delete(order_id)

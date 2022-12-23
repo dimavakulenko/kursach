@@ -43,7 +43,7 @@ async def executor_login(
 ):
     check_user_exist = await check_user_existence(crypto_encode(email),
                                                   crypto_encode(password), table='executors')
-    jwt_token = create_access_token({"user_id": check_user_exist.id})
+    jwt_token = create_access_token({"user_id": str(check_user_exist.id)})
     return {"access_token": jwt_token, "token_type": "Bearer"}
 
 

@@ -9,7 +9,7 @@ from fastapi import HTTPException
 
 from app.database import database
 from app.models.database import executor, Executor
-from app.utils.helpers import crypto_decode
+from app.utils.helpers import crypto_decode, crypto_encode
 
 
 async def check_email_existence(
@@ -30,14 +30,14 @@ async def check_user_existence(
         password: bytes,
         table: str
 ):
-    query = '''SELECT FROM public.{} WHERE email = :email and password = :password'''.format(table)
+    query = '''SELECT * FROM public.{} WHERE email = :email and password = :password'''.format(table)
     user_check = await database.fetch_one(query=query,
                                           values={
                                               'email': email.decode('utf-8'),
                                               'password': password.decode('utf-8'),
                                           }
                                           )
-    if user_check is None:
+    if user_check.id is None:
         raise HTTPException(HTTPStatus.NOT_FOUND, detail='user does not exist')
     return user_check
 
@@ -185,3 +185,8 @@ async def update_order(order_id: uuid.UUID, title: str, description: str, files:
                                                                })
     except asyncpg.exceptions.DataError:
         raise HTTPException(status_code=422, detail='Wrong order parameters type')
+
+
+async def order_delete(order_id):
+    query = '''DELETE from orders where id=:order_id'''
+    delete_order = await database.fetch_one(query, values={'order_id': order_id})
