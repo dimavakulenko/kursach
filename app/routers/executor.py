@@ -82,7 +82,7 @@ async def get_customer(
 
 
 @router.get(
-    "/customer/{customer_id}/orders:"
+    "/customer/{customer_id}/orders"
 )
 async def orders_list(
         type: str = Query(..., description='order type(Kompas,Autocad,Mathcad)')

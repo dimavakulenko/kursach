@@ -9,7 +9,7 @@ from fastapi import APIRouter, Query, Path, Depends
 
 from app.crud import create_user, get_verified_executor, check_user_existence, \
     get_list_orders, get_list_orders_by_customer_id, create_order, update_order, delete_order, executor_review, \
-    executor_approve, executor_reject,order_status_customer
+    executor_approve, executor_reject,order_status_customer, orders_list
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
 from app.utils.token_decode import Token
@@ -140,7 +140,20 @@ async def review_executor(
 )
 async def get_status(
     order_id: uuid.UUID = Path(...),
-    token: Token = Depends()
+):
+    order_status = await order_status_customer(order_id)
+    return {'status': order_status}
+
+@router.get(
+    "/order/list"
+)
+async def list_of_orders(
+        token: Token = Depends()
 ):
     customer_id = token.token_data['user_id']
-    _ = await order_status_customer(order_id, customer_id)
+    orders = await orders_list(customer_id)
+    return [{
+        'title': i.title,
+        'price': i.price,
+        'date': i.date,
+    } for i in orders]

@@ -164,11 +164,11 @@ async def create_order(customer_id: str, title: str, description: str, files: st
         raise HTTPException(status_code=422, detail='Wrong order parameters type')
 
 
-async def update_order(order_id: uuid.UUID,customer_id: uuid.UUID, title: str,
+async def update_order(order_id: uuid.UUID, customer_id: uuid.UUID, title: str,
                        description: str, files: str, price: float, type: str):
     query = '''SELECT * FROM orders where id=:id and customer_id=:customer_id'''
     order_existance = await database.fetch_one(query, values={'id': order_id,
-                                                              'customer_id':customer_id})
+                                                              'customer_id': customer_id})
     if order_existance is None:
         raise HTTPException(status_code=404, detail="This order does not exist")
     query = '''SELECT id FROM order_types where name ilike :type'''
@@ -211,8 +211,8 @@ async def executor_approve(order_id):
     query = '''UPDATE comments SET confirmed = True where order_id = :order_id'''
     _ = await database.fetch_one(query,
                                  values={
-                                        'order_id': order_id,
-                                        }
+                                     'order_id': order_id,
+                                 }
                                  )
 
 
@@ -220,11 +220,31 @@ async def executor_reject(order_id):
     query = '''UPDATE comments SET confirmed = False where order_id = :order_id'''
     _ = await database.fetch_one(query,
                                  values={
-                                        'order_id': order_id,
-                                        }
+                                     'order_id': order_id,
+                                 }
                                  )
 
 
-async def order_status_customer(customer_id, order_id):
-    try:
-        query = '''SELECT name FROM public.status where id = (SELECT deal_status_customer FROM '''
+async def order_status_customer(order_id):
+    query = '''SELECT name FROM public.status where id = (SELECT deal_status_customer FROM deals where 
+    comment_id=(select id from public.comments where order_id = :order_id))'''
+    order_status = await database.fetch_one(query,
+                                            values={
+                                                'order_id': order_id,
+                                            }
+                                            )
+    return order_status.name
+
+
+async def orders_list(customer_id):
+    query = '''SELECT title, price, date from public.orders where customer_id = :customer_id ORDER BY date desc'''
+    orders_info = await database.fetch_all(query,
+                                           values={
+                                               'customer_id': customer_id,
+                                           }
+                                           )
+    if orders_info is None:
+        raise HTTPException(status_code=404, detail="This user doesn't have orders")
+    return orders_info
+
+
