@@ -8,7 +8,8 @@ import fastapi
 from fastapi import APIRouter, Query, Path, Depends
 
 from app.crud import create_user, get_verified_executor, check_user_existence, \
-    get_list_orders, get_list_orders_by_customer_id, create_order, update_order, delete_order, executor_review
+    get_list_orders, get_list_orders_by_customer_id, create_order, update_order, delete_order, executor_review, \
+    executor_approve, executor_reject,order_status_customer
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
 from app.utils.token_decode import Token
@@ -107,28 +108,39 @@ async def order_delete(
     "/order/{order_id}/approve"
 )
 async def approve_executor(
-
+    order_id: uuid.UUID = Path()
 ):
-    pass
+    _ = await executor_approve(order_id)
 
 
 @router.post(
     "/order/{order_id}/reject"
 )
 async def reject_executor(
-
+    order_id: uuid.UUID = Path()
 ):
-    pass
+    _ = await executor_reject(order_id)
 
 
 @router.post(
     "/order/{order_id}/review"
 )
 async def review_executor(
-    executor_id: str = Query(...),
+    executor_id: uuid.UUID = Query(...),
     text: str = Query(...),
     rating: float = Query(...),
     token: Token = Depends()
 ):
     customer_id = token.token_data['user_id']
     _ = await executor_review(customer_id, executor_id, text, rating)
+
+
+@router.get(
+    "/order/{order_id}/status"
+)
+async def get_status(
+    order_id: uuid.UUID = Path(...),
+    token: Token = Depends()
+):
+    customer_id = token.token_data['user_id']
+    _ = await order_status_customer(order_id, customer_id)

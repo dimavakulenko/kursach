@@ -205,3 +205,26 @@ async def executor_review(customer_id, executor_id, text, rating):
                                                 'rating': rating
                                                 }
                                  )
+
+
+async def executor_approve(order_id):
+    query = '''UPDATE comments SET confirmed = True where order_id = :order_id'''
+    _ = await database.fetch_one(query,
+                                 values={
+                                        'order_id': order_id,
+                                        }
+                                 )
+
+
+async def executor_reject(order_id):
+    query = '''UPDATE comments SET confirmed = False where order_id = :order_id'''
+    _ = await database.fetch_one(query,
+                                 values={
+                                        'order_id': order_id,
+                                        }
+                                 )
+
+
+async def order_status_customer(customer_id, order_id):
+    try:
+        query = '''SELECT name FROM public.status where id = (SELECT deal_status_customer FROM '''
