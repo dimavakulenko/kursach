@@ -3,7 +3,7 @@ import uuid
 from typing import Optional
 import hashlib
 import base64
-from fastapi import APIRouter, Query, Path
+from fastapi import APIRouter, Query, Path, Body
 
 from app.crud import create_user, get_verified_customer, check_user_existence, get_list_orders, get_list_orders_by_customer_id
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
@@ -19,15 +19,15 @@ router = APIRouter(
     "/",
 )
 async def executor_create(
-        email: str = Query(...),
-        password: str = Query(...),
-        name: str = Query(...),
-        second_name: str = Query(...),
-        birth_date: str = Query(...),
-        photo_url: Optional[str] = Query(default=None),
-        phone_number: str = Query(...),
-        country: Optional[str] = Query(...),
-        city: Optional[str] = Query(...),
+        email: str = Body(...),
+        password: str = Body(...),
+        name: str = Body(...),
+        second_name: str = Body(...),
+        birth_date: str = Body(...),
+        photo_url: Optional[str] = Body(default=None),
+        phone_number: str = Body(...),
+        country: Optional[str] = Body(...),
+        city: Optional[str] = Body(...),
 ):
     _ = await create_user(crypto_encode(email), crypto_encode(password),
                           crypto_encode(name), crypto_encode(second_name), birth_date,
