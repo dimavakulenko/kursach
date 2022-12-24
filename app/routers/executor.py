@@ -3,11 +3,13 @@ import uuid
 from typing import Optional
 import hashlib
 import base64
-from fastapi import APIRouter, Query, Path, Body
+from fastapi import APIRouter, Query, Path, Body, Depends
 
-from app.crud import create_user, get_verified_customer, check_user_existence, get_list_orders, get_list_orders_by_customer_id
+from app.crud import create_user, get_verified_customer, check_user_existence, get_list_orders, \
+    get_list_orders_by_customer_id, info_about_order, executor_done_orders, perform_executor_to_order
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
+from app.utils.token_decode import Token
 
 router = APIRouter(
     tags=["executor"],
@@ -50,53 +52,71 @@ async def executor_login(
 @router.get(
     "/orders"
 )
-async def orders_list(
-        type: str = Query(..., description='order type(Kompas,Autocad,Mathcad)')
+async def orders_list_by_type(
+        type: str = Query(..., description='order type(kompas,autocad,mathcad)')
 ):
-    orders = get_list_orders(type)
-    result = [
-        {
-            'title': i['title'],
-            'price': i['price'],
-            'date': i['date'],
-        } for i in orders
-    ]
-    return result
+    orders = await get_list_orders(type)
+    return orders
 
 
 @router.get(
     "/customer/{customer_id}",
-    response_model=InformationAboutUser
 )
 async def get_customer(
         customer_id: uuid.UUID = Path(...)
 ):
-    user_info = await get_verified_user(customer_id)
-    return {
-        'name': crypto_decode(user_info['name'].encode('utf-8')),
-        'second_name': crypto_decode(user_info['second_name'].encode('utf-8')),
-        'photo_url': user_info['photo_url'],
-        'country': user_info['country'],
-        'phone_number': user_info['phone_number']
-    }
+    user_info = await get_verified_customer(customer_id)
+    return user_info
 
 
 @router.get(
     "/customer/{customer_id}/orders"
 )
-async def orders_list(
-        type: str = Query(..., description='order type(Kompas,Autocad,Mathcad)')
+async def customer_orders(
+        customer_id: uuid.UUID = Path(...)
 ):
-    orders = get_list_orders_by_customer_id(type)
-    result = [
-        {
-            'title': i['title'],
-            'price': i['price'],
-            'date': i['date'],
-        } for i in orders
-    ]
-    return result
+    orders = await get_list_orders_by_customer_id(customer_id)
+    return orders
 
-# @router.get(
-#     "/order/{order_id}"
-# )
+
+@router.get(
+    "/order/{order_id}"
+)
+async def get_order_info(
+        order_id: uuid.UUID = Path()
+):
+    order_info = await info_about_order(order_id)
+    return order_info
+
+
+@router.get(
+    "/order/done/"
+)
+async def list_executor_done_orders(
+        token: Token = Depends()
+):
+    executor_id = token.token_data['user_id']
+    done_orders_info = await executor_done_orders(executor_id)
+    return done_orders_info
+
+
+@router.get(
+    "/order/in_progress/"
+)
+async def list_executor_in_progress_orders(
+    token: Token = Depends()
+):
+    executor_id = token.token_data['user_id']
+    progress_orders_info = await executor_done_orders(executor_id)
+    return progress_orders_info
+
+
+@router.post(
+    "order/{order_id}/performed"
+)
+async def perform_executor(
+        token: Token = Depends(),
+        order_id: uuid.UUID = Path(),
+):
+    executor_id = token.token_data['user_id']
+    perform = await perform_executor_to_order(executor_id, order_id)

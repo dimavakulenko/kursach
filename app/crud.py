@@ -45,27 +45,41 @@ async def check_user_existence(
 async def get_list_orders(
         type: str
 ):
-    query = '''select title, price, date from orders where type_id =(select id from order_types where name = :type) 
+    query = '''select id, title, price, date from orders where type_id =(select id from order_types where name = :type) 
     order by date desc '''
     orders = await database.fetch_all(query=query,
                                       values={
                                           'type': type,
                                       }
                                       )
-    return orders
+    return [
+        {
+            'id': i.id,
+            'title': i.title,
+            'price': i.price,
+            'date': i.date,
+        } for i in orders
+    ]
 
 
 async def get_list_orders_by_customer_id(
         customer_id: uuid.UUID
 ):
-    query = '''select title, price, date from orders where customer_id =:customer_id
+    query = '''select id, title, price, date from orders where customer_id =:customer_id
     order by date desc '''
-    orders = await database.fetch_one(query=query,
+    orders = await database.fetch_all(query=query,
                                       values={
                                           'customer_id': customer_id,
                                       }
                                       )
-    return orders
+    return [
+        {
+            'id': i.id,
+            'title': i.title,
+            'price': i.price,
+            'date': i.date,
+        } for i in orders
+    ]
 
 
 async def get_role_id(
@@ -121,14 +135,16 @@ async def create_user(
 
 
 async def get_verified_customer(id: uuid.UUID):
-    query = '''select * from public.customers where id=:id'''
+    query = '''select name,second_name,photo_url,phone_number,country from public.customers
+        where customers.id= :id'''
     customer_info = await database.fetch_one(query, values={'id': id})
     if customer_info is None:
         raise HTTPException(status_code=404, detail="User not found")
     return {
-        'name': customer_info.name,
-        'second_name': customer_info.second_name,
+        'name': crypto_decode(customer_info.name),
+        'second_name': crypto_decode(customer_info.second_name),
         'photo_url': customer_info.photo_url,
+        'phone_number': customer_info.phone_number,
         'country': customer_info.country,
     }
 
@@ -286,17 +302,11 @@ async def info_about_order(order_id):
                                            }
                                            )
     query = '''select name from status where id =:id'''
-    status = await database.fetch_one(query,
-                                      values={
-                                          'id': orders_info.deal_status_customer,
-                                      }
-                                      )
     return {
         'title': orders_info.title,
         'description': orders_info.description,
         'files': orders_info.files,
         'price': orders_info.price,
-        'status': status.name,
         'date': orders_info.date
     }
 
@@ -327,6 +337,52 @@ async def update_order_customer_status(order_id, status_name, customer_id):
                                      }
                                      )
 
+
+async def executor_done_orders(executor_id):
+    query = '''SELECT id, title, price, date from public.orders 
+    where id = (select order_id from comments where executor_id = :id and confirmed=True) and 
+    id = ANY (SELECT completed_order_id from basket)'''
+    done_orders_info = await database.fetch_all(query,
+                                                values={
+                                                    'id': executor_id,
+                                                }
+                                                )
+    return [{
+        'id': i.id,
+        'title': i.title,
+        'price': i.price,
+        'date': i.date,
+    } for i in done_orders_info]
+
+
+async def executor_in_progress_orders(executor_id):
+    query = '''SELECT id, title, price, date from public.orders 
+    where id = (select order_id from comments where executor_id = :id and confirmed=True 
+    and deal_status_executor = (select name from status where name='progress'))'''
+    in_progress_orders_info = await database.fetch_all(query,
+                                                       values={
+                                                           'id': executor_id,
+                                                       }
+                                                       )
+    return [
+        {
+            'id': i.id,
+            'title': i.title,
+            'price': i.price,
+            'date': i.date,
+        } for i in in_progress_orders_info
+    ]
+
+
+async def perform_executor_to_order(executor_id, order_id):
+    query = '''INSERT INTO comments values (:id, :order_id, :executor_id, :confirmed)'''
+    performing_executor = await database.fetch_one(query=query,
+                                                   values={
+                                                       'id': uuid.uuid4(),
+                                                       'order_id': order_id,
+                                                       'executor_id': executor_id,
+                                                       'confirmed': False
+                                                   })
 # async def get_executor(executor_id: uuid.UUID):
 #     query = '''select * from public.executors where id=:id'''
 #     customer_info = await database.fetch_one(query, values={'id': id})
