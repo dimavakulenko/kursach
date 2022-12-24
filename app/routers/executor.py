@@ -6,7 +6,8 @@ import base64
 from fastapi import APIRouter, Query, Path, Body, Depends
 
 from app.crud import create_user, get_verified_customer, check_user_existence, get_list_orders, \
-    get_list_orders_by_customer_id, info_about_order, executor_done_orders, perform_executor_to_order
+    get_list_orders_by_customer_id, info_about_order, executor_done_orders, perform_executor_to_order, \
+    update_order_executor_status
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
 from app.utils.token_decode import Token
@@ -112,7 +113,7 @@ async def list_executor_in_progress_orders(
 
 
 @router.post(
-    "order/{order_id}/performed"
+    "/order/{order_id}/performed"
 )
 async def perform_executor(
         token: Token = Depends(),
@@ -120,3 +121,15 @@ async def perform_executor(
 ):
     executor_id = token.token_data['user_id']
     perform = await perform_executor_to_order(executor_id, order_id)
+
+
+@router.post(
+    "/order/{order_id}/status/update"
+)
+async def perform_executor(
+        token: Token = Depends(),
+        order_id: uuid.UUID = Path(),
+        status: str = Body(example='progress/done/review/search')
+):
+    executor_id = token.token_data['user_id']
+    status_update = await update_order_executor_status(order_id, status, executor_id)

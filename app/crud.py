@@ -239,6 +239,28 @@ async def executor_approve(order_id, executor_id):
                                      'executor_id': executor_id
                                  }
                                  )
+    query = '''SELECT id from comments where confirmed = True and order_id = :order_id and executor_id = :executor_id'''
+    comment_data = await database.fetch_one(query,
+                                            values={
+                                                'order_id': order_id,
+                                                'executor_id': executor_id
+                                            }
+                                            )
+    query = '''select id from status where name =:name'''
+    progress_status_id = await database.fetch_one(query,
+                                                  values={
+                                                      'name': 'progress'
+                                                  })
+    query = '''insert into deals values (:id,:comment_id, :deal_status_executor,:deal_status_customer,:files)'''
+    create_deal = await database.fetch_one(query,
+                                           values={
+                                               'id': uuid.uuid4(),
+                                               'comment_id': comment_data.id,
+                                               'deal_status_executor': progress_status_id.id,
+                                               'deal_status_customer': progress_status_id.id,
+                                               'files': 'hui'
+                                           }
+                                           )
 
 
 async def executor_reject(order_id, executor_id):
@@ -383,6 +405,34 @@ async def perform_executor_to_order(executor_id, order_id):
                                                        'executor_id': executor_id,
                                                        'confirmed': False
                                                    })
+
+
+async def update_order_executor_status(order_id, status_name, customer_id):
+    query = '''update deals set deal_status_executor= (select id from status where name = :status) 
+                                    where comment_id = (select id from comments where order_id = :order_id)'''
+    status = await database.fetch_one(query,
+                                      values={
+                                          'order_id': order_id,
+                                          'status': status_name
+                                      }
+                                      )
+    query = '''SELECT name FROM public.status where id = (SELECT deal_status_customer FROM deals where 
+    comment_id=(select id from public.comments where order_id = :order_id))'''
+    executor_status = await database.fetch_one(query,
+                                               values={
+                                                   'order_id': order_id,
+                                               }
+                                               )
+    if executor_status.name == 'done' and status_name == 'done':
+        query = '''INSERT INTO public.basket values (:id, :order_id, :customer_id)'''
+        _ = await database.fetch_one(query,
+                                     values={
+                                         'id': uuid.uuid4(),
+                                         'order_id': order_id,
+                                         'customer_id': customer_id
+                                     }
+                                     )
+
 # async def get_executor(executor_id: uuid.UUID):
 #     query = '''select * from public.executors where id=:id'''
 #     customer_info = await database.fetch_one(query, values={'id': id})
