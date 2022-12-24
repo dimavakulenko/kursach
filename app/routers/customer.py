@@ -9,7 +9,8 @@ from fastapi import APIRouter, Query, Path, Depends, Body
 
 from app.crud import create_user, get_verified_executor, check_user_existence, \
     get_list_orders, get_list_orders_by_customer_id, create_order, update_order, delete_order, executor_review, \
-    executor_approve, executor_reject, order_status_customer, orders_list, get_list_executors, info_about_order
+    executor_approve, executor_reject, order_status_customer, orders_list, get_list_executors, info_about_order,\
+    update_order_customer_status
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
 from app.utils.token_decode import Token
@@ -178,15 +179,18 @@ async def executors_list():
 )
 async def order_info(
     order_id: uuid.UUID = Path(),
-    token: Token = Depends()
+):
+    info_order = await info_about_order(order_id)
+    return info_order
+
+
+@router.post(
+    "/order/{order_id}/status/update"
+)
+async def update_status(
+    order_id: uuid.UUID = Path(),
+    token: Token = Depends(),
+    status: str = Body(example='progress/done/review/search')
 ):
     customer_id = token.token_data['user_id']
-    info_order = await info_about_order(order_id, customer_id)
-    return {
-        'title': info_order.title,
-        'description': info_order.description,
-        'files': info_order.files,
-        'price': info_order.price,
-        'status': info_order.status,
-        'date':info_order.date
-    }
+    status_update = await update_order_customer_status(order_id,status, customer_id)

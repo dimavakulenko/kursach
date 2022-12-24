@@ -259,13 +259,14 @@ async def orders_list(customer_id):
 
 
 async def get_list_executors():
-    query = '''select  avg(r.rating) as rating,id, name,second_name,photo_url,phone_number,country from public.executors
-    left join public.reviews r on r.executor_id = public.executors.id
-    GROUP BY name,second_name,photo_url,phone_number,country
+    query = '''select avg(r.rating) as rating, exec.id, exec.name,exec.second_name,exec.photo_url,exec.
+    phone_number,exec.country from public.executors exec
+    left join public.reviews r on r.executor_id = exec.id
+    GROUP BY exec.id,exec.name,exec.second_name,exec.photo_url,exec.phone_number,exec.country
     order by rating'''
     executors_info = await database.fetch_all(query)
     return [{
-        'id':  i.id,
+        'id': i.id,
         'name': crypto_decode(i.name),
         'second_name': crypto_decode(i.second_name),
         'photo_url': i.photo_url,
@@ -275,15 +276,56 @@ async def get_list_executors():
     } for i in executors_info]
 
 
-async def info_about_order(order_id, customer_id):
-    query = '''SELECT * FROM orders where id = :order_id and customer_id=:customer_id'''
+async def info_about_order(order_id):
+    query = '''SELECT * FROM orders ord
+    left join deals d on d.comment_id = (select id from comments id where order_id = :order_id)
+    where ord.id = :order_id'''
     orders_info = await database.fetch_one(query,
                                            values={
                                                'order_id': order_id,
-                                               'customer_id': customer_id
                                            }
                                            )
-    return orders_info
+    query = '''select name from status where id =:id'''
+    status = await database.fetch_one(query,
+                                      values={
+                                          'id': orders_info.deal_status_customer,
+                                      }
+                                      )
+    return {
+        'title': orders_info.title,
+        'description': orders_info.description,
+        'files': orders_info.files,
+        'price': orders_info.price,
+        'status': status.name,
+        'date': orders_info.date
+    }
+
+
+async def update_order_customer_status(order_id, status_name, customer_id):
+    query = '''update deals set deal_status_customer= (select id from status where name = :status) 
+                                    where comment_id = (select id from comments where order_id = :order_id)'''
+    status = await database.fetch_one(query,
+                                      values={
+                                          'order_id': order_id,
+                                          'status': status_name
+                                      }
+                                      )
+    query = '''SELECT name FROM public.status where id = (SELECT deal_status_executor FROM deals where 
+    comment_id=(select id from public.comments where order_id = :order_id))'''
+    executor_status = await database.fetch_one(query,
+                                               values={
+                                                   'order_id': order_id,
+                                               }
+                                               )
+    if executor_status.name == 'done' and status_name == 'done':
+        query = '''INSERT INTO public.basket values (:id, :order_id, :customer_id)'''
+        _ = await database.fetch_one(query,
+                                     values={
+                                         'id': uuid.uuid4(),
+                                         'order_id': order_id,
+                                         'customer_id': customer_id
+                                     }
+                                     )
 
 # async def get_executor(executor_id: uuid.UUID):
 #     query = '''select * from public.executors where id=:id'''
