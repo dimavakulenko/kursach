@@ -9,7 +9,7 @@ from fastapi import APIRouter, Query, Path, Depends, Body
 
 from app.crud import create_user, get_verified_executor, check_user_existence, \
     get_list_orders, get_list_orders_by_customer_id, create_order, update_order, delete_order, executor_review, \
-    executor_approve, executor_reject, order_status_customer, orders_list
+    executor_approve, executor_reject, order_status_customer, orders_list, get_list_executors
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
 from app.utils.token_decode import Token
@@ -66,11 +66,11 @@ async def executor_info(
     "/order"
 )
 async def order_create(
-        title: str = Query(max_length=50),
-        description: str = Query(max_length=300),
-        files: str = Query(description='file links'),
-        price: float = Query(...),
-        type: str = Query(max_length=20),
+        title: str = Body(max_length=50),
+        description: str = Body(max_length=300),
+        files: str = Body(description='file links'),
+        price: float = Body(...),
+        type: str = Body(max_length=20),
         token: Token = Depends()
 ):
     customer_id = token.token_data['user_id']
@@ -81,12 +81,12 @@ async def order_create(
     "/order/update"
 )
 async def order_update(
-        order_id: uuid.UUID = Query(...),
-        title: str = Query(max_length=50),
-        description: str = Query(max_length=300),
-        files: str = Query(description='file links'),
-        price: float = Query(...),
-        type: str = Query(...),
+        order_id: uuid.UUID = Body(...),
+        title: str = Body(max_length=50),
+        description: str = Body(max_length=300),
+        files: str = Body(description='file links'),
+        price: float = Body(...),
+        type: str = Body(...),
         token: Token = Depends()
 ):
     customer_id = token.token_data['user_id']
@@ -126,9 +126,9 @@ async def reject_executor(
     "/order/{order_id}/review"
 )
 async def review_executor(
-        executor_id: uuid.UUID = Query(...),
-        text: str = Query(...),
-        rating: float = Query(...),
+        executor_id: uuid.UUID = Body(...),
+        text: str = Body(...),
+        rating: float = Body(...),
         token: Token = Depends()
 ):
     customer_id = token.token_data['user_id']
@@ -161,3 +161,10 @@ async def list_of_orders(
         } for i in orders
     ]
 
+
+@router.get(
+    "/executors/list"
+)
+async def executors_list():
+    customer_info = await get_list_executors()
+    return customer_info

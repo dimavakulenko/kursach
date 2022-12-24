@@ -253,6 +253,20 @@ async def orders_list(customer_id):
     return orders_info
 
 
+async def get_list_executors():
+    query = '''select  avg(r.rating) as rating, name,second_name,photo_url,phone_number,country from public.executors
+    left join public.reviews r on r.executor_id = public.executors.id
+    GROUP BY name,second_name,photo_url,phone_number,country'''
+    executors_info = await database.fetch_all(query)
+    return [{
+        'name': crypto_decode(i.name),
+        'second_name': crypto_decode(i.second_name),
+        'photo_url': i.photo_url,
+        'phone_number': i.phone_number,
+        'country': i.country,
+        'rating': i.rating
+    } for i in executors_info]
+
 # async def get_executor(executor_id: uuid.UUID):
 #     query = '''select * from public.executors where id=:id'''
 #     customer_info = await database.fetch_one(query, values={'id': id})
