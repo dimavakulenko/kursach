@@ -131,7 +131,10 @@ async def get_verified_customer(id: uuid.UUID):
 
 
 async def get_verified_executor(id: uuid.UUID):
-    query = '''select * from public.executors where id=:id'''
+    query = '''select  avg(r.rating) as rating, name,second_name,photo_url,phone_number,country from public.executors
+    left join public.reviews r on r.executor_id = :id
+    where executors.id= :id
+    GROUP BY name,second_name,photo_url,phone_number,country'''
     executor_info = await database.fetch_one(query, values={'id': id})
     if executor_info is None:
         raise HTTPException(status_code=404, detail="User not found")
@@ -139,7 +142,9 @@ async def get_verified_executor(id: uuid.UUID):
         'name': crypto_decode(executor_info.name),
         'second_name': crypto_decode(executor_info.second_name),
         'photo_url': executor_info.photo_url,
+        'phone_number': executor_info.phone_number,
         'country': executor_info.country,
+        'rating': executor_info.rating
     }
 
 
@@ -248,3 +253,14 @@ async def orders_list(customer_id):
     return orders_info
 
 
+# async def get_executor(executor_id: uuid.UUID):
+#     query = '''select * from public.executors where id=:id'''
+#     customer_info = await database.fetch_one(query, values={'id': id})
+#     if customer_info is None:
+#         raise HTTPException(status_code=404, detail="User not found")
+#     return {
+#         'name': customer_info.name,
+#         'second_name': customer_info.second_name,
+#         'photo_url': customer_info.photo_url,
+#         'country': customer_info.country,
+#     }
