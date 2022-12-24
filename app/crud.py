@@ -37,7 +37,7 @@ async def check_user_existence(
                                               'password': password.decode('utf-8'),
                                           }
                                           )
-    if user_check.id is None:
+    if user_check is None:
         raise HTTPException(HTTPStatus.NOT_FOUND, detail='user does not exist')
     return user_check
 
@@ -164,9 +164,11 @@ async def create_order(customer_id: str, title: str, description: str, files: st
         raise HTTPException(status_code=422, detail='Wrong order parameters type')
 
 
-async def update_order(order_id: uuid.UUID, title: str, description: str, files: str, price: float, type: str):
-    query = '''SELECT * FROM orders where id=:id'''
-    order_existance = await database.fetch_one(query, values={'id': order_id})
+async def update_order(order_id: uuid.UUID,customer_id: uuid.UUID, title: str,
+                       description: str, files: str, price: float, type: str):
+    query = '''SELECT * FROM orders where id=:id and customer_id=:customer_id'''
+    order_existance = await database.fetch_one(query, values={'id': order_id,
+                                                              'customer_id':customer_id})
     if order_existance is None:
         raise HTTPException(status_code=404, detail="This order does not exist")
     query = '''SELECT id FROM order_types where name ilike :type'''
@@ -187,6 +189,19 @@ async def update_order(order_id: uuid.UUID, title: str, description: str, files:
         raise HTTPException(status_code=422, detail='Wrong order parameters type')
 
 
-async def order_delete(order_id):
-    query = '''DELETE from orders where id=:order_id'''
-    delete_order = await database.fetch_one(query, values={'order_id': order_id})
+async def delete_order(order_id, customer_id):
+    query = '''DELETE from orders where id=:order_id and customer_id=:customer_id'''
+    _ = await database.fetch_one(query, values={'order_id': order_id,
+                                                'customer_id': customer_id})
+
+
+async def executor_review(customer_id, executor_id, text, rating):
+    query = '''INSERT INTO public.reviews (id, customer_id, executor_id, text, rating) 
+    values (:id, :customer_id, :executor_id, :text, :rating)'''
+    _ = await database.fetch_one(query, values={'id': uuid.uuid4(),
+                                                'customer_id': customer_id,
+                                                'executor_id': executor_id,
+                                                'text': text,
+                                                'rating': rating
+                                                }
+                                 )

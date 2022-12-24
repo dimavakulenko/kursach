@@ -8,7 +8,7 @@ import fastapi
 from fastapi import APIRouter, Query, Path, Depends
 
 from app.crud import create_user, get_verified_executor, check_user_existence, \
-    get_list_orders, get_list_orders_by_customer_id, create_order, update_order,order_delete
+    get_list_orders, get_list_orders_by_customer_id, create_order, update_order, delete_order, executor_review
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
 from app.utils.token_decode import Token
@@ -65,7 +65,6 @@ async def executor_info(
     "/order"
 )
 async def order_create(
-        user_id: str = Query(...),
         title: str = Query(max_length=50),
         description: str = Query(max_length=300),
         files: str = Query(description='file links'),
@@ -75,7 +74,6 @@ async def order_create(
 ):
     customer_id = token.token_data['user_id']
     _ = await create_order(customer_id, title, description, files, price, type)
-    a = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjpudWxsLCJleHAiOjE2NzE4MjU0MDF9.RDH_xsKGXIj37gajO8X-IViLvEUmO2yxymJqR58sWV8'
 
 
 @router.post(
@@ -87,9 +85,11 @@ async def order_update(
         description: str = Query(max_length=300),
         files: str = Query(description='file links'),
         price: float = Query(...),
-        type: str = Query(...)
+        type: str = Query(...),
+        token: Token = Depends()
 ):
-    _ = await update_order(order_id, title, description, files, price, type)
+    customer_id = token.token_data['user_id']
+    _ = await update_order(order_id,customer_id, title, description, files, price, type)
 
 
 @router.delete(
@@ -97,5 +97,38 @@ async def order_update(
 )
 async def order_delete(
         order_id: uuid.UUID = Path(...),
+        token: Token = Depends()
 ):
-    _ = await order_delete(order_id)
+    customer_id = token.token_data['user_id']
+    _ = await delete_order(order_id, customer_id)
+
+
+@router.post(
+    "/order/{order_id}/approve"
+)
+async def approve_executor(
+
+):
+    pass
+
+
+@router.post(
+    "/order/{order_id}/reject"
+)
+async def reject_executor(
+
+):
+    pass
+
+
+@router.post(
+    "/order/{order_id}/review"
+)
+async def review_executor(
+    executor_id: str = Query(...),
+    text: str = Query(...),
+    rating: float = Query(...),
+    token: Token = Depends()
+):
+    customer_id = token.token_data['user_id']
+    _ = await executor_review(customer_id, executor_id, text, rating)

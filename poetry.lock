@@ -1,6 +1,6 @@
 [[package]]
 name = "alembic"
-version = "1.9.0"
+version = "1.9.1"
 description = "A database migration tool for SQLAlchemy."
 category = "main"
 optional = false
