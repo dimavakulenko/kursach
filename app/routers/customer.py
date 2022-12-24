@@ -9,7 +9,7 @@ from fastapi import APIRouter, Query, Path, Depends, Body
 
 from app.crud import create_user, get_verified_executor, check_user_existence, \
     get_list_orders, get_list_orders_by_customer_id, create_order, update_order, delete_order, executor_review, \
-    executor_approve, executor_reject, order_status_customer, orders_list, get_list_executors
+    executor_approve, executor_reject, order_status_customer, orders_list, get_list_executors, info_about_order
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
 from app.utils.token_decode import Token
@@ -108,18 +108,20 @@ async def order_delete(
     "/order/{order_id}/approve"
 )
 async def approve_executor(
-        order_id: uuid.UUID = Path()
+        order_id: uuid.UUID = Path(),
+        executor_id: uuid.UUID = Query(...)
 ):
-    _ = await executor_approve(order_id)
+    _ = await executor_approve(order_id, executor_id)
 
 
 @router.post(
     "/order/{order_id}/reject"
 )
 async def reject_executor(
-        order_id: uuid.UUID = Path()
+        order_id: uuid.UUID = Path(),
+        executor_id: uuid.UUID = Query(...)
 ):
-    _ = await executor_reject(order_id)
+    _ = await executor_reject(order_id, executor_id)
 
 
 @router.post(
@@ -155,6 +157,7 @@ async def list_of_orders(
     orders = await orders_list(customer_id)
     return [
         {
+            'id': i.id,
             'title': i.title,
             'price': i.price,
             'date': i.date,
@@ -168,3 +171,22 @@ async def list_of_orders(
 async def executors_list():
     customer_info = await get_list_executors()
     return customer_info
+
+
+@router.get(
+    "/order/{order_id}"
+)
+async def order_info(
+    order_id: uuid.UUID = Path(),
+    token: Token = Depends()
+):
+    customer_id = token.token_data['user_id']
+    info_order = await info_about_order(order_id, customer_id)
+    return {
+        'title': info_order.title,
+        'description': info_order.description,
+        'files': info_order.files,
+        'price': info_order.price,
+        'status': info_order.status,
+        'date':info_order.date
+    }

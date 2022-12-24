@@ -71,13 +71,16 @@ async def get_list_orders_by_customer_id(
 async def get_role_id(
         role: str
 ):
-    query = '''SELECT id FROM public.roles where name ilike :role'''
-    role_id = await database.fetch_one(query=query,
-                                       values={
-                                           'role': role
-                                       }
-                                       )
-    return role_id.id
+    try:
+        query = '''SELECT id FROM public.roles where name ilike :role'''
+        role_id = await database.fetch_one(query=query,
+                                           values={
+                                               'role': role
+                                           }
+                                           )
+        return role_id.id
+    except AttributeError:
+        raise HTTPException(HTTPStatus.CONFLICT, detail='Illegal user role')
 
 
 async def create_user(
@@ -212,20 +215,22 @@ async def executor_review(customer_id, executor_id, text, rating):
                                  )
 
 
-async def executor_approve(order_id):
-    query = '''UPDATE comments SET confirmed = True where order_id = :order_id'''
+async def executor_approve(order_id, executor_id):
+    query = '''UPDATE comments SET confirmed = True where order_id = :order_id and executor_id = :executor_id'''
     _ = await database.fetch_one(query,
                                  values={
                                      'order_id': order_id,
+                                     'executor_id': executor_id
                                  }
                                  )
 
 
-async def executor_reject(order_id):
-    query = '''UPDATE comments SET confirmed = False where order_id = :order_id'''
+async def executor_reject(order_id, executor_id):
+    query = '''UPDATE comments SET confirmed = False where order_id = :order_id and executor_id = :executor_id'''
     _ = await database.fetch_one(query,
                                  values={
                                      'order_id': order_id,
+                                     'executor_id': executor_id
                                  }
                                  )
 
@@ -242,7 +247,7 @@ async def order_status_customer(order_id):
 
 
 async def orders_list(customer_id):
-    query = '''SELECT title, price, date from public.orders where customer_id = :customer_id ORDER BY date desc'''
+    query = '''SELECT id, title, price, date from public.orders where customer_id = :customer_id ORDER BY date desc'''
     orders_info = await database.fetch_all(query,
                                            values={
                                                'customer_id': customer_id,
@@ -254,11 +259,13 @@ async def orders_list(customer_id):
 
 
 async def get_list_executors():
-    query = '''select  avg(r.rating) as rating, name,second_name,photo_url,phone_number,country from public.executors
+    query = '''select  avg(r.rating) as rating,id, name,second_name,photo_url,phone_number,country from public.executors
     left join public.reviews r on r.executor_id = public.executors.id
-    GROUP BY name,second_name,photo_url,phone_number,country'''
+    GROUP BY name,second_name,photo_url,phone_number,country
+    order by rating'''
     executors_info = await database.fetch_all(query)
     return [{
+        'id':  i.id,
         'name': crypto_decode(i.name),
         'second_name': crypto_decode(i.second_name),
         'photo_url': i.photo_url,
@@ -266,6 +273,17 @@ async def get_list_executors():
         'country': i.country,
         'rating': i.rating
     } for i in executors_info]
+
+
+async def info_about_order(order_id, customer_id):
+    query = '''SELECT * FROM orders where id = :order_id and customer_id=:customer_id'''
+    orders_info = await database.fetch_one(query,
+                                           values={
+                                               'order_id': order_id,
+                                               'customer_id': customer_id
+                                           }
+                                           )
+    return orders_info
 
 # async def get_executor(executor_id: uuid.UUID):
 #     query = '''select * from public.executors where id=:id'''

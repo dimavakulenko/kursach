@@ -96,3 +96,7 @@ async def orders_list(
         } for i in orders
     ]
     return result
+
+# @router.get(
+#     "/order/{order_id}"
+# )
