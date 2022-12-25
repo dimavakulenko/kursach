@@ -9,7 +9,7 @@ from fastapi import APIRouter, Query, Path, Depends, Body
 
 from app.crud import create_user, get_verified_executor, check_user_existence, \
     get_list_orders, get_list_orders_by_customer_id, create_order, update_order, delete_order, executor_review, \
-    executor_approve, executor_reject, order_status_customer, orders_list, get_list_executors, info_about_order,\
+    executor_approve, executor_reject, order_status_customer, orders_list, get_list_executors, info_about_order, \
     update_order_customer_status
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
@@ -25,15 +25,15 @@ router = fastapi.APIRouter(
     "/",
 )
 async def customer_create(
-        email: str = Body(...),
-        password: str = Body(...),
-        name: str = Body(...),
-        second_name: str = Body(...),
-        birth_date: str = Body(...),
-        photo_url: Optional[str] = Body(default=None),
-        phone_number: str = Body(...),
-        country: Optional[str] = Body(...),
-        city: Optional[str] = Body(...),
+        email: str = Query(...),
+        password: str = Query(...),
+        name: str = Query(...),
+        second_name: str = Query(...),
+        birth_date: str = Query(...),
+        photo_url: Optional[str] = Query(default=None),
+        phone_number: str = Query(...),
+        country: Optional[str] = Query(...),
+        city: Optional[str] = Query(...),
 ):
     _ = await create_user(crypto_encode(email), crypto_encode(password),
                           crypto_encode(name), crypto_encode(second_name), birth_date,
@@ -53,12 +53,16 @@ async def customer_login(
     jwt_token = create_access_token({"user_id": str(check_user_exist.id)})
     return {"access_token": jwt_token,
             "token_type": "Bearer",
-            "name": check_user_exist.name,
-            "second_name": check_user_exist.second_name,
-            "photo_url": check_user_exist.photo_url,
-            "phone_number": check_user_exist.phone_number,
-            "country": check_user_exist.country,
-            "city": check_user_exist.city,
+            'user': {
+                'id': check_user_exist.id,
+                'email': email,
+                "name": crypto_decode(check_user_exist.name),
+                "second_name": crypto_decode(check_user_exist.second_name),
+                "photo_url": check_user_exist.photo_url,
+                "phone_number": check_user_exist.phone_number,
+                "country": check_user_exist.country,
+                "city": check_user_exist.city,
+            }
             }
 
 
@@ -193,7 +197,7 @@ async def executors_list():
     "/order/{order_id}"
 )
 async def order_info(
-    order_id: uuid.UUID = Path(),
+        order_id: uuid.UUID = Path(),
 ):
     info_order = await info_about_order(order_id)
     return info_order
@@ -203,9 +207,9 @@ async def order_info(
     "/order/{order_id}/status/update"
 )
 async def update_status(
-    order_id: uuid.UUID = Path(),
-    token: Token = Depends(),
-    status: str = Query(example='progress/done/review/search')
+        order_id: uuid.UUID = Path(),
+        token: Token = Depends(),
+        status: str = Query(example='progress/done/review/search')
 ):
     customer_id = token.token_data['user_id']
     status_update = await update_order_customer_status(order_id, status, customer_id)

@@ -51,6 +51,8 @@ async def executor_login(
     return {"access_token": jwt_token,
             "token_type": "Bearer",
             "user": {
+                'id': check_user_exist.id,
+                'email': email,
                 "name": crypto_decode(check_user_exist.name),
                 "second_name": crypto_decode(check_user_exist.second_name),
                 "photo_url": check_user_exist.photo_url,
