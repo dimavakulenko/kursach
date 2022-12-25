@@ -38,6 +38,7 @@ async def customer_create(
     _ = await create_user(crypto_encode(email), crypto_encode(password),
                           crypto_encode(name), crypto_encode(second_name), birth_date,
                           photo_url, phone_number, country, city, 'customer')
+    return {'status': 'ok'}
 
 
 @router.get(
@@ -50,7 +51,15 @@ async def customer_login(
     check_user_exist = await check_user_existence(crypto_encode(email),
                                                   crypto_encode(password), table='customers')
     jwt_token = create_access_token({"user_id": str(check_user_exist.id)})
-    return {"access_token": jwt_token, "token_type": "Bearer"}
+    return {"access_token": jwt_token,
+            "token_type": "Bearer",
+            "name": check_user_exist.name,
+            "second_name": check_user_exist.second_name,
+            "photo_url": check_user_exist.photo_url,
+            "phone_number": check_user_exist.phone_number,
+            "country": check_user_exist.country,
+            "city": check_user_exist.city,
+            }
 
 
 @router.get(
@@ -67,31 +76,33 @@ async def executor_info(
     "/order"
 )
 async def order_create(
-        title: str = Body(max_length=50),
-        description: str = Body(max_length=300),
-        files: str = Body(description='file links'),
-        price: float = Body(...),
+        title: str = Query(max_length=50),
+        description: str = Query(max_length=300),
+        files: str = Query(description='file links'),
+        price: float = Query(...),
         type: str = Body(max_length=20),
         token: Token = Depends()
 ):
     customer_id = token.token_data['user_id']
     _ = await create_order(customer_id, title, description, files, price, type)
+    return {'status': 'ok'}
 
 
 @router.post(
     "/order/update"
 )
 async def order_update(
-        order_id: uuid.UUID = Body(...),
-        title: str = Body(max_length=50),
-        description: str = Body(max_length=300),
-        files: str = Body(description='file links'),
-        price: float = Body(...),
-        type: str = Body(...),
+        order_id: uuid.UUID = Query(...),
+        title: str = Query(max_length=50),
+        description: str = Query(max_length=300),
+        files: str = Query(description='file links'),
+        price: float = Query(...),
+        type: str = Query(...),
         token: Token = Depends()
 ):
     customer_id = token.token_data['user_id']
     _ = await update_order(order_id, customer_id, title, description, files, price, type)
+    return {'status': 'ok'}
 
 
 @router.delete(
@@ -103,6 +114,7 @@ async def order_delete(
 ):
     customer_id = token.token_data['user_id']
     _ = await delete_order(order_id, customer_id)
+    return {'status': 'ok'}
 
 
 @router.post(
@@ -113,6 +125,7 @@ async def approve_executor(
         executor_id: uuid.UUID = Query(...)
 ):
     _ = await executor_approve(order_id, executor_id)
+    return {'status': 'ok'}
 
 
 @router.post(
@@ -123,19 +136,21 @@ async def reject_executor(
         executor_id: uuid.UUID = Query(...)
 ):
     _ = await executor_reject(order_id, executor_id)
+    return {'status': 'ok'}
 
 
 @router.post(
     "/order/{order_id}/review"
 )
 async def review_executor(
-        executor_id: uuid.UUID = Body(...),
-        text: str = Body(...),
-        rating: float = Body(...),
+        executor_id: uuid.UUID = Query(...),
+        text: str = Query(...),
+        rating: float = Query(...),
         token: Token = Depends()
 ):
     customer_id = token.token_data['user_id']
     _ = await executor_review(customer_id, executor_id, text, rating)
+    return {'status': 'ok'}
 
 
 @router.get(
@@ -190,7 +205,8 @@ async def order_info(
 async def update_status(
     order_id: uuid.UUID = Path(),
     token: Token = Depends(),
-    status: str = Body(example='progress/done/review/search')
+    status: str = Query(example='progress/done/review/search')
 ):
     customer_id = token.token_data['user_id']
     status_update = await update_order_customer_status(order_id, status, customer_id)
+    return {'status': 'ok'}
