@@ -48,7 +48,15 @@ async def executor_login(
     check_user_exist = await check_user_existence(crypto_encode(email),
                                                   crypto_encode(password), table='executors')
     jwt_token = create_access_token({"user_id": str(check_user_exist.id)})
-    return {"access_token": jwt_token, "token_type": "Bearer"}
+    return {"access_token": jwt_token,
+            "token_type": "Bearer",
+            "name": check_user_exist.name,
+            "second_name": check_user_exist.second_name,
+            "photo_url": check_user_exist.photo_url,
+            "phone_number": check_user_exist.phone_number,
+            "country": check_user_exist.country,
+            "city": check_user_exist.city,
+            }
 
 
 @router.get(
