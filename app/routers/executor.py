@@ -50,12 +50,14 @@ async def executor_login(
     jwt_token = create_access_token({"user_id": str(check_user_exist.id)})
     return {"access_token": jwt_token,
             "token_type": "Bearer",
-            "name": check_user_exist.name,
-            "second_name": check_user_exist.second_name,
-            "photo_url": check_user_exist.photo_url,
-            "phone_number": check_user_exist.phone_number,
-            "country": check_user_exist.country,
-            "city": check_user_exist.city,
+            "user": {
+                "name": crypto_decode(check_user_exist.name),
+                "second_name": crypto_decode(check_user_exist.second_name),
+                "photo_url": check_user_exist.photo_url,
+                "phone_number": check_user_exist.phone_number,
+                "country": check_user_exist.country,
+                "city": check_user_exist.city,
+            }
             }
 
 
@@ -114,7 +116,7 @@ async def list_executor_done_orders(
     "/order/in_progress/"
 )
 async def list_executor_in_progress_orders(
-    token: Token = Depends()
+        token: Token = Depends()
 ):
     executor_id = token.token_data['user_id']
     progress_orders_info = await executor_done_orders(executor_id)
