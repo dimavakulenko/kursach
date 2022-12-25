@@ -18,7 +18,7 @@ router = APIRouter(
 )
 
 
-@router.post(
+@router.options(
     "/",
 )
 async def executor_create(
