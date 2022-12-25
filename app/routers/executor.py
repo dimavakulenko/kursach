@@ -35,6 +35,7 @@ async def executor_create(
     _ = await create_user(crypto_encode(email), crypto_encode(password),
                           crypto_encode(name), crypto_encode(second_name), birth_date,
                           photo_url, phone_number, country, city, 'executor')
+    return {'status': 'ok'}
 
 
 @router.get(
@@ -121,15 +122,17 @@ async def perform_executor(
 ):
     executor_id = token.token_data['user_id']
     perform = await perform_executor_to_order(executor_id, order_id)
+    return {'status': 'ok'}
 
 
 @router.post(
     "/order/{order_id}/status/update"
 )
-async def perform_executor(
+async def change_executor_status(
         token: Token = Depends(),
         order_id: uuid.UUID = Path(),
         status: str = Body(example='progress/done/review/search')
 ):
     executor_id = token.token_data['user_id']
     status_update = await update_order_executor_status(order_id, status, executor_id)
+    return {'status': 'ok'}
