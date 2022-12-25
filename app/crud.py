@@ -45,13 +45,17 @@ async def check_user_existence(
 async def get_list_orders(
         type: str
 ):
-    query = '''select id, title, price, date from orders where type_id =(select id from order_types where name = :type) 
-    order by date desc '''
+    if type:
+        query = '''select id, title, price, date from orders where type_id =(select id from order_types where name = :type) 
+        order by date desc '''
+    else:
+        query = '''select id, title, price, date from orders order by date desc '''
     orders = await database.fetch_all(query=query,
                                       values={
                                           'type': type,
                                       }
                                       )
+
     return [
         {
             'id': i.id,

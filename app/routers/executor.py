@@ -67,7 +67,7 @@ async def executor_login(
     "/orders"
 )
 async def orders_list_by_type(
-        type: str = Query(..., description='order type(kompas,autocad,mathcad)')
+        type: Optional[str] = Query(default=None,description='order type(kompas,autocad,mathcad)')
 ):
     orders = await get_list_orders(type)
     return orders
