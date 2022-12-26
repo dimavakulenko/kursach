@@ -70,6 +70,7 @@ async def customer_login(
     "/executor/{executor_id}"
 )
 async def executor_info(
+        token: Token = Depends(),
         executor_id: uuid.UUID = Path(...)
 ):
     customer_info = await get_verified_executor(executor_id)
@@ -126,7 +127,8 @@ async def order_delete(
 )
 async def approve_executor(
         order_id: uuid.UUID = Path(),
-        executor_id: uuid.UUID = Query(...)
+        executor_id: uuid.UUID = Query(...),
+        token: Token = Depends()
 ):
     _ = await executor_approve(order_id, executor_id)
     return {'status': 'ok'}
@@ -137,7 +139,8 @@ async def approve_executor(
 )
 async def reject_executor(
         order_id: uuid.UUID = Path(),
-        executor_id: uuid.UUID = Query(...)
+        executor_id: uuid.UUID = Query(...),
+        token: Token = Depends(),
 ):
     _ = await executor_reject(order_id, executor_id)
     return {'status': 'ok'}
@@ -162,6 +165,7 @@ async def review_executor(
 )
 async def get_status(
         order_id: uuid.UUID = Path(...),
+        token: Token = Depends(),
 ):
     order_status = await order_status_customer(order_id)
     return {'status': order_status}
@@ -188,7 +192,9 @@ async def list_of_orders(
 @router.get(
     "/executors/list"
 )
-async def executors_list():
+async def executors_list(
+        token: Token = Depends(),
+):
     customer_info = await get_list_executors()
     return customer_info
 
@@ -198,6 +204,7 @@ async def executors_list():
 )
 async def order_info(
         order_id: uuid.UUID = Path(),
+        token: Token = Depends(),
 ):
     info_order = await info_about_order(order_id)
     return info_order

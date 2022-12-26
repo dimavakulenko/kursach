@@ -12,4 +12,4 @@ class Token:
         try:
             self.token_data = decode_access_token(authorisation)
         except Exception:
-            raise HTTPException(status_code=422, detail='illegal user token')
+            raise HTTPException(status_code=401, detail='illegal user token')

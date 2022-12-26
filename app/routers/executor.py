@@ -77,6 +77,7 @@ async def orders_list_by_type(
     "/customer/{customer_id}",
 )
 async def get_customer(
+        token: Token = Depends(),
         customer_id: uuid.UUID = Path(...)
 ):
     user_info = await get_verified_customer(customer_id)
@@ -87,6 +88,7 @@ async def get_customer(
     "/customer/{customer_id}/orders"
 )
 async def customer_orders(
+        token: Token = Depends(),
         customer_id: uuid.UUID = Path(...)
 ):
     orders = await get_list_orders_by_customer_id(customer_id)
@@ -97,6 +99,7 @@ async def customer_orders(
     "/order/{order_id}"
 )
 async def get_order_info(
+        token: Token = Depends(),
         order_id: uuid.UUID = Path()
 ):
     order_info = await info_about_order(order_id)
@@ -153,6 +156,8 @@ async def change_executor_status(
 @router.get(
     "/types"
 )
-async def get_orders_types():
+async def get_orders_types(
+        token: Token = Depends(),
+):
     order_types = await get_types()
-    return {'types':[i.name for i in order_types]}
+    return {'types': [i.name for i in order_types]}

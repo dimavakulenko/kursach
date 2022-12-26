@@ -27,7 +27,7 @@ class AppConfig(BaseSettings):
 
     POSTGRES_DSN = 'postgresql+asyncpg://app:123qwe@localhost:5432/postgres'
     SECRET_TOKEN_KEY = b'8ffsZ-qAz7dJtONx3y4Rsmt7tlrOfT28IlJmlVyOBhs='
-    JWT_TOKEN_EXPIRATION_TIME = 15
+    JWT_TOKEN_EXPIRATION_TIME = 1
 
     class Config:
         use_enum_values = True
