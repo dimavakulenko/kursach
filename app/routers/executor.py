@@ -7,7 +7,7 @@ from fastapi import APIRouter, Query, Path, Body, Depends
 
 from app.crud import create_user, get_verified_customer, check_user_existence, get_list_orders, \
     get_list_orders_by_customer_id, info_about_order, executor_done_orders, perform_executor_to_order, \
-    update_order_executor_status
+    update_order_executor_status, get_types
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
 from app.utils.token_decode import Token
@@ -148,3 +148,11 @@ async def change_executor_status(
     executor_id = token.token_data['user_id']
     status_update = await update_order_executor_status(order_id, status, executor_id)
     return {'status': 'ok'}
+
+
+@router.get(
+    "/types"
+)
+async def get_orders_types():
+    order_types = await get_types()
+    return {'types':[i.name for i in order_types]}

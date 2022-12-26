@@ -437,14 +437,8 @@ async def update_order_executor_status(order_id, status_name, customer_id):
                                      }
                                      )
 
-# async def get_executor(executor_id: uuid.UUID):
-#     query = '''select * from public.executors where id=:id'''
-#     customer_info = await database.fetch_one(query, values={'id': id})
-#     if customer_info is None:
-#         raise HTTPException(status_code=404, detail="User not found")
-#     return {
-#         'name': customer_info.name,
-#         'second_name': customer_info.second_name,
-#         'photo_url': customer_info.photo_url,
-#         'country': customer_info.country,
-#     }
+
+async def get_types():
+    query = '''SELECT name from public.order_types'''
+    order_types = await database.fetch_all(query)
+    return order_types
