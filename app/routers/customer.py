@@ -84,7 +84,7 @@ async def order_create(
         description: str = Query(max_length=300),
         files: str = Query(description='file links'),
         price: float = Query(...),
-        type: str = Body(max_length=20),
+        type: str = Query(max_length=20),
         token: Token = Depends()
 ):
     customer_id = token.token_data['user_id']
