@@ -53,8 +53,10 @@ create table order_types(
 create table orders(
     id UUID primary key,
     customer_id UUID NOT NULL,
-    title TEXT, description TEXT,
-    files TEXT, price money,
+    title TEXT,
+    description TEXT,
+    files TEXT,
+    price numeric(10,2),
     type_id UUID NOT NULL,
     date date);
 create table basket(
@@ -68,7 +70,7 @@ alter table comments add constraint fk_comments_order_id foreign key(order_id) r
 alter table deals add constraint fk_deals_comment_id foreign key(comment_id) references comments(id);
 alter table deals add constraint fk_deals_status_executor_id foreign key(deal_status_executor) references status(id);
 alter table deals add constraint fk_deals_status_customer_id foreign key(deal_status_customer) references status(id);
-alter table orders add constraint fk_orders_type_id foreign key(type_id) references order_types(id);
+alter table orders add constraint fk_o rders_type_id foreign key(type_id) references order_types(id);
 alter table basket add constraint fk_basket_customer_id foreign key (customer_id) references customers (id);
 alter table basket add constraint fk_basket_order_id foreign key (completed_order_id) references orders (id) ;
 

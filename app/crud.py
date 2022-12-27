@@ -1,5 +1,7 @@
 import datetime
 import hashlib
+# import urllib.parse
+import urllib
 from http import HTTPStatus
 import uuid
 from typing import Optional
@@ -46,7 +48,9 @@ async def get_list_orders(
         type: str
 ):
     if type:
-        query = '''select id, title, price, date from orders where type_id =(select id from order_types where name = :type) 
+        query = '''select ord.id, title, price,ot.name as type, date from orders ord
+            join order_types ot on ord.type_id = ot.id
+        where type_id =(select id from order_types where name = :type) 
         order by date desc '''
         orders = await database.fetch_all(query=query,
                                           values={
@@ -54,7 +58,9 @@ async def get_list_orders(
                                           }
                                           )
     else:
-        query = '''select id, title, price, date from orders order by date desc '''
+        query = '''select ord.id, title, price,ot.name as type, date from orders ord
+                join order_types ot on ord.type_id = ot.id
+                order by date desc '''
         orders = await database.fetch_all(query=query)
     return [
         {
@@ -62,6 +68,7 @@ async def get_list_orders(
             'title': i.title,
             'price': i.price,
             'date': i.date,
+            'type': i.type
         } for i in orders
     ]
 
@@ -178,18 +185,18 @@ async def create_order(customer_id: str, title: str, description: str, files: st
         raise HTTPException(status_code=404, detail="This order type does not exist")
     query = '''INSERT INTO orders (id, customer_id, title, description, files, price, type_id, date) 
     values (:id, :customer_id, :title, :description, :files, :price, :type_id, :date)'''
-    # try:
-    order_create = await database.fetch_one(query, values={'id': uuid.uuid4(),
-                                                           'customer_id': customer_id,
-                                                           'title': title,
-                                                           'description': description,
-                                                           'files': files,
-                                                           'price': price,
-                                                           'type_id': type_id.id,
-                                                           'date': datetime.datetime.today()
-                                                           })
-    # except asyncpg.exceptions.DataError:
-    #     raise HTTPException(status_code=422, detail='Wrong order parameters type')
+    try:
+        order_create = await database.fetch_one(query, values={'id': uuid.uuid4(),
+                                                               'customer_id': customer_id,
+                                                               'title': title,
+                                                               'description': description,
+                                                               'files': files,
+                                                               'price': price,
+                                                               'type_id': type_id.id,
+                                                               'date': datetime.datetime.today()
+                                                               })
+    except asyncpg.exceptions.DataError:
+        raise HTTPException(status_code=422, detail='Wrong order parameters type')
 
 
 async def update_order(order_id: uuid.UUID, customer_id: uuid.UUID, title: str,
@@ -321,19 +328,20 @@ async def get_list_executors():
 async def info_about_order(order_id):
     query = '''SELECT * FROM orders ord
     left join deals d on d.comment_id = (select id from comments id where order_id = :order_id)
+    join order_types ot on ord.type_id = ot.id
     where ord.id = :order_id'''
     orders_info = await database.fetch_one(query,
                                            values={
                                                'order_id': order_id,
                                            }
                                            )
-    query = '''select name from status where id =:id'''
     return {
         'title': orders_info.title,
         'description': orders_info.description,
         'files': orders_info.files,
         'price': orders_info.price,
-        'date': orders_info.date
+        'date': orders_info.date,
+        'type': orders_info.name
     }
 
 
