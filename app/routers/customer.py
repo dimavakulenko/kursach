@@ -10,7 +10,7 @@ from fastapi import APIRouter, Query, Path, Depends, Body
 from app.crud import create_user, get_verified_executor, check_user_existence, \
     get_list_orders, get_list_orders_by_customer_id, create_order, update_order, delete_order, executor_review, \
     executor_approve, executor_reject, order_status_customer, orders_list, get_list_executors, info_about_order, \
-    update_order_customer_status
+    update_order_customer_status, get_customer_info_by_id
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
 from app.utils.token_decode import Token
@@ -221,3 +221,14 @@ async def update_status(
     customer_id = token.token_data['user_id']
     status_update = await update_order_customer_status(order_id, status, customer_id)
     return {'status': 'ok'}
+
+
+@router.get(
+    "/refresh"
+)
+async def refresh_customer_info(
+    token: Token = Depends()
+):
+    customer_id = token.token_data['user_id']
+    user_info = await get_customer_info_by_id(customer_id)
+    return user_info

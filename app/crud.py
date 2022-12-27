@@ -442,3 +442,41 @@ async def get_types():
     query = '''SELECT name from public.order_types'''
     order_types = await database.fetch_all(query)
     return order_types
+
+
+async def get_customer_info_by_id(customer_id):
+    query = '''Select id, email,name,second_name,photo_url,phone_number,country,city from customers where id=:id'''
+    executor_data = await database.fetch_one(query,
+                                             values={
+                                                 'id': customer_id,
+                                             }
+                                             )
+    return {
+        'id': executor_data.id,
+        'email': crypto_decode(executor_data.email),
+        "name": crypto_decode(executor_data.name),
+        "second_name": crypto_decode(executor_data.second_name),
+        "photo_url": executor_data.photo_url,
+        "phone_number": executor_data.phone_number,
+        "country": executor_data.country,
+        "city": executor_data.city
+    }
+
+
+async def get_executor_info_by_id(executor_id):
+    query = '''Select id, email,name,second_name,photo_url,phone_number,country,city from executors where id=:exec_id'''
+    executor_data = await database.fetch_one(query,
+                                             values={
+                                                 'exec_id': executor_id,
+                                             }
+                                             )
+    return {
+        'id': executor_data.id,
+        'email': crypto_decode(executor_data.email),
+        "name": crypto_decode(executor_data.name),
+        "second_name": crypto_decode(executor_data.second_name),
+        "photo_url": executor_data.photo_url,
+        "phone_number": executor_data.phone_number,
+        "country": executor_data.country,
+        "city": executor_data.city
+    }

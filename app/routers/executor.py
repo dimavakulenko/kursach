@@ -7,7 +7,7 @@ from fastapi import APIRouter, Query, Path, Body, Depends
 
 from app.crud import create_user, get_verified_customer, check_user_existence, get_list_orders, \
     get_list_orders_by_customer_id, info_about_order, executor_done_orders, perform_executor_to_order, \
-    update_order_executor_status, get_types
+    update_order_executor_status, get_types, get_executor_info_by_id
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
 from app.utils.token_decode import Token
@@ -161,3 +161,14 @@ async def get_orders_types(
 ):
     order_types = await get_types()
     return {'types': [i.name for i in order_types]}
+
+
+@router.get(
+    "/refresh"
+)
+async def refresh_executor_info(
+    token: Token = Depends()
+):
+    executor_id = token.token_data['user_id']
+    user_info = await get_executor_info_by_id(executor_id)
+    return user_info
