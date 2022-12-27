@@ -184,7 +184,7 @@ async def create_order(customer_id: str, title: str, description: str, files: st
                                                            'title': title,
                                                            'description': description,
                                                            'files': files,
-                                                           'price': str(price),
+                                                           'price': price,
                                                            'type_id': type_id.id,
                                                            'date': datetime.datetime.today()
                                                            })
