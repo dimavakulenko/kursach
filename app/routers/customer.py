@@ -30,7 +30,7 @@ async def customer_create(
         name: str = Query(...),
         second_name: str = Query(...),
         birth_date: str = Query(...),
-        photo_url: Optional[str] = Query(default=None),
+        photo_url: Optional[str] = Body(default=None),
         phone_number: str = Query(...),
         country: Optional[str] = Query(...),
         city: Optional[str] = Query(...),
