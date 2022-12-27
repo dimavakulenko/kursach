@@ -178,18 +178,18 @@ async def create_order(customer_id: str, title: str, description: str, files: st
         raise HTTPException(status_code=404, detail="This order type does not exist")
     query = '''INSERT INTO orders (id, customer_id, title, description, files, price, type_id, date) 
     values (:id, :customer_id, :title, :description, :files, :price, :type_id, :date)'''
-    try:
-        order_create = await database.fetch_one(query, values={'id': uuid.uuid4(),
-                                                               'customer_id': customer_id,
-                                                               'title': title,
-                                                               'description': description,
-                                                               'files': files,
-                                                               'price': str(price),
-                                                               'type_id': type_id.id,
-                                                               'date': datetime.datetime.today()
-                                                               })
-    except asyncpg.exceptions.DataError:
-        raise HTTPException(status_code=422, detail='Wrong order parameters type')
+    # try:
+    order_create = await database.fetch_one(query, values={'id': uuid.uuid4(),
+                                                           'customer_id': customer_id,
+                                                           'title': title,
+                                                           'description': description,
+                                                           'files': files,
+                                                           'price': str(price),
+                                                           'type_id': type_id.id,
+                                                           'date': datetime.datetime.today()
+                                                           })
+    # except asyncpg.exceptions.DataError:
+    #     raise HTTPException(status_code=422, detail='Wrong order parameters type')
 
 
 async def update_order(order_id: uuid.UUID, customer_id: uuid.UUID, title: str,
