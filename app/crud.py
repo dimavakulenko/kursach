@@ -286,14 +286,14 @@ async def executor_reject(order_id, executor_id):
 
 async def order_status_customer(order_id):
     query = '''SELECT name FROM public.status where id = any(SELECT deal_status_executor FROM deals where 
-    comment_id=(select id from public.comments where order_id = :order_id))'''
+    comment_id= any (select id from public.comments where order_id = :order_id))'''
     executor_order_status = await database.fetch_one(query,
                                                      values={
                                                          'order_id': order_id,
                                                      }
                                                      )
     query = '''SELECT name FROM public.status where id = any(SELECT deal_status_customer FROM deals where 
-    comment_id=(select id from public.comments where order_id = :order_id))'''
+    comment_id= any (select id from public.comments where order_id = :order_id))'''
     customer_order_status = await database.fetch_one(query,
                                                      values={
                                                          'order_id': order_id,
