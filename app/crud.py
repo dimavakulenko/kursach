@@ -292,7 +292,7 @@ async def order_status_customer(order_id):
                                                 'order_id': order_id,
                                             }
                                             )
-    return order_status.name
+    return order_status.name if order_status else None
 
 
 async def orders_list(customer_id):
