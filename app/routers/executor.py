@@ -150,7 +150,7 @@ async def change_executor_status(
         status: str = Body(example='progress/done/review/search')
 ):
     executor_id = token.token_data['user_id']
-    status_update = await update_order_executor_status(order_id, status, executor_id)
+    status_update = await update_order_executor_status(order_id, status)
     return {'status': 'ok'}
 
 

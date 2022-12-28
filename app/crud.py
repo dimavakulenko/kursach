@@ -269,7 +269,6 @@ async def executor_approve(order_id, executor_id):
                                                'comment_id': comment_data.id,
                                                'deal_status_executor': progress_status_id.id,
                                                'deal_status_customer': progress_status_id.id,
-                                               'files': 'hui'
                                            }
                                            )
 
@@ -429,7 +428,7 @@ async def perform_executor_to_order(executor_id, order_id):
                                                    )
 
 
-async def update_order_executor_status(order_id, status_name, customer_id):
+async def update_order_executor_status(order_id, status_name):
     query = '''update deals set deal_status_executor= (select id from status where name = :status) 
                                     where comment_id = (select id from comments where order_id = :order_id)'''
     status = await database.fetch_one(query,
@@ -445,13 +444,19 @@ async def update_order_executor_status(order_id, status_name, customer_id):
                                                    'order_id': order_id,
                                                }
                                                )
+    query = '''select customer_id from orders where id=:order_id'''
+    customer_id = await database.fetch_one(query,
+                                           values={
+                                               'order_id': order_id,
+                                           }
+                                           )
     if executor_status.name == 'done' and status_name == 'done':
         query = '''INSERT INTO public.basket values (:id, :order_id, :customer_id)'''
         _ = await database.fetch_one(query,
                                      values={
                                          'id': uuid.uuid4(),
                                          'order_id': order_id,
-                                         'customer_id': customer_id
+                                         'customer_id': customer_id.customer_id
                                      }
                                      )
 
