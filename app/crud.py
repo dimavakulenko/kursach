@@ -518,3 +518,12 @@ async def get_executors_performing(customer_id):
             'order_id': i.order_id
         } for i in executor_performance
     ]
+
+
+async def get_executor_otklik_orders(executor_id):
+    query = '''select order_id from comments where executor_id=:executor_id'''
+    ids_list = await database.fetch_all(query,
+                                        values={
+                                            'executor_id':executor_id
+                                        })
+    return [i.order_id for i in ids_list]
