@@ -275,7 +275,7 @@ async def executor_approve(order_id, executor_id):
 
 
 async def executor_reject(order_id, executor_id):
-    query = '''UPDATE comments SET confirmed = False where order_id = :order_id and executor_id = :executor_id'''
+    query = '''DELETE FROM comments where order_id = :order_id and executor_id = :executor_id'''
     _ = await database.fetch_one(query,
                                  values={
                                      'order_id': order_id,
