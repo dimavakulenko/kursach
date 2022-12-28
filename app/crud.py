@@ -285,14 +285,24 @@ async def executor_reject(order_id, executor_id):
 
 
 async def order_status_customer(order_id):
-    query = '''SELECT name FROM public.status where id = (SELECT deal_status_customer FROM deals where 
+    query = '''SELECT name FROM public.status where id = any(SELECT deal_status_executor FROM deals where 
     comment_id=(select id from public.comments where order_id = :order_id))'''
-    order_status = await database.fetch_one(query,
-                                            values={
-                                                'order_id': order_id,
-                                            }
-                                            )
-    return order_status.name if order_status else 'search'
+    executor_order_status = await database.fetch_one(query,
+                                                     values={
+                                                         'order_id': order_id,
+                                                     }
+                                                     )
+    query = '''SELECT name FROM public.status where id = any(SELECT deal_status_customer FROM deals where 
+    comment_id=(select id from public.comments where order_id = :order_id))'''
+    customer_order_status = await database.fetch_one(query,
+                                                     values={
+                                                         'order_id': order_id,
+                                                     }
+                                                     )
+    return {
+        'executor_status': executor_order_status.name if executor_order_status else None,
+        'customer_status': customer_order_status.name if executor_order_status else 'search'
+    }
 
 
 async def orders_list(customer_id):
@@ -523,6 +533,6 @@ async def get_executor_otklik_orders(executor_id):
     query = '''select order_id from comments where executor_id=:executor_id'''
     ids_list = await database.fetch_all(query,
                                         values={
-                                            'executor_id':executor_id
+                                            'executor_id': executor_id
                                         })
     return [i.order_id for i in ids_list]
