@@ -8,7 +8,7 @@ from fastapi import APIRouter, Query, Path, Body, Depends
 from app.crud import create_user, get_verified_customer, check_user_existence, get_list_orders, \
     get_list_orders_by_customer_id, info_about_order, executor_done_orders, perform_executor_to_order, \
     update_order_executor_status, get_types, get_executor_info_by_id, get_response_to_executor, \
-    get_executor_otklik_orders
+    get_executor_otklik_orders, order_status_customer
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
 from app.utils.token_decode import Token
@@ -196,3 +196,14 @@ async def get_all_executor_performances(
     executor_id = token.token_data['user_id']
     orders_perf_ids = await get_executor_otklik_orders(executor_id)
     return orders_perf_ids
+
+
+@router.get(
+    "/order/{order_id}/status"
+)
+async def get_status(
+        order_id: uuid.UUID = Path(...),
+        token: Token = Depends(),
+):
+    order_status = await order_status_customer(order_id)
+    return {'status': order_status}
