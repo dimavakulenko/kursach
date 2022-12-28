@@ -416,7 +416,8 @@ async def perform_executor_to_order(executor_id, order_id):
                                                        'order_id': order_id,
                                                        'executor_id': executor_id,
                                                        'confirmed': False
-                                                   })
+                                                   }
+                                                   )
 
 
 async def update_order_executor_status(order_id, status_name, customer_id):
@@ -495,9 +496,25 @@ async def get_response_to_executor(executor_id, order_id):
     executor_data = await database.fetch_one(query,
                                              values={
                                                  'executor_id': executor_id,
-                                                 'order_id':  order_id
+                                                 'order_id': order_id
                                              }
                                              )
     return {
         'response': executor_data.confirmed
     }
+
+
+async def get_executors_performing(customer_id):
+    query = '''select order_id, executor_id from comments where 
+            order_id = any(select id from orders where customer_id=:customer_id) and confirmed=False'''
+    executor_performance = await database.fetch_all(query,
+                                                    values={
+                                                        'customer_id': customer_id,
+                                                    }
+                                                    )
+    return [
+        {
+            'executor': i.executor_id,
+            'order_id': i.order_id
+        } for i in executor_performance
+    ]
