@@ -327,7 +327,6 @@ async def get_list_executors():
 
 async def info_about_order(order_id):
     query = '''SELECT * FROM orders ord
-    left join deals d on d.comment_id = (select id from comments id where order_id = :order_id)
     join order_types ot on ord.type_id = ot.id
     where ord.id = :order_id'''
     orders_info = await database.fetch_one(query,
