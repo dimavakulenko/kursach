@@ -355,7 +355,7 @@ async def info_about_order(order_id):
 
 async def update_order_customer_status(order_id, status_name, customer_id):
     query = '''update deals set deal_status_customer= (select id from status where name = :status) 
-                                    where comment_id = (select id from comments where order_id = :order_id)'''
+                                    where comment_id = any (select id from comments where order_id = :order_id)'''
     status = await database.fetch_one(query,
                                       values={
                                           'order_id': order_id,
@@ -363,7 +363,7 @@ async def update_order_customer_status(order_id, status_name, customer_id):
                                       }
                                       )
     query = '''SELECT name FROM public.status where id = (SELECT deal_status_executor FROM deals where 
-    comment_id=(select id from public.comments where order_id = :order_id))'''
+    comment_id= any (select id from public.comments where order_id = :order_id))'''
     executor_status = await database.fetch_one(query,
                                                values={
                                                    'order_id': order_id,
