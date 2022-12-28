@@ -541,3 +541,25 @@ async def get_executor_otklik_orders(executor_id):
                                             'executor_id': executor_id
                                         })
     return [i.order_id for i in ids_list]
+
+
+async def get_ready_orders(customer_id):
+    query = '''select ord.id, title, price,ot.name as type, date from orders ord
+                join order_types ot on ord.type_id = ot.id
+                where ord.id = any (select completed_order_id from basket where customer_id =:customer_id)
+                order by date desc '''
+    ready_orders_data = await database.fetch_all(query,
+                                                 values={
+                                                     'customer_id':customer_id
+                                                 })
+    try:
+        return [
+            {
+                'id': i.id,
+                'title': i.title,
+                'price': i.price,
+                'date': i.date,
+            } for i in ready_orders_data
+        ]
+    except Exception:
+        raise HTTPException(status_code=400, detail='does not exist done orders yet')

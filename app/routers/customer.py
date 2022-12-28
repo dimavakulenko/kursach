@@ -10,7 +10,7 @@ from fastapi import APIRouter, Query, Path, Depends, Body
 from app.crud import create_user, get_verified_executor, check_user_existence, \
     get_list_orders, get_list_orders_by_customer_id, create_order, update_order, delete_order, executor_review, \
     executor_approve, executor_reject, order_status_customer, orders_list, get_list_executors, info_about_order, \
-    update_order_customer_status, get_customer_info_by_id, get_executors_performing
+    update_order_customer_status, get_customer_info_by_id, get_executors_performing, get_ready_orders
 from app.utils.helpers import crypto_encode, crypto_decode, create_access_token, decode_access_token
 from app.models.users import InformationAboutUser
 from app.utils.token_decode import Token
@@ -243,3 +243,13 @@ async def executors_performance(
     customer_id = token.token_data['user_id']
     data = await get_executors_performing(customer_id)
     return data
+
+@router.get(
+    "/orders/done"
+)
+async def get_ready_customer_orders(
+        token: Token = Depends()
+):
+    customer_id = token.token_data['user_id']
+    ready_orders = await get_ready_orders(customer_id)
+    return ready_orders
