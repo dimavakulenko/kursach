@@ -488,3 +488,16 @@ async def get_executor_info_by_id(executor_id):
         "country": executor_data.country,
         "city": executor_data.city
     }
+
+
+async def get_response_to_executor(executor_id, order_id):
+    query = '''SELECT confirmed from comments where executor_id=:executor_id and order_id=:order_id'''
+    executor_data = await database.fetch_one(query,
+                                             values={
+                                                 'executor_id': executor_id,
+                                                 'order_id':  order_id
+                                             }
+                                             )
+    return {
+        'response': executor_data.confirmed
+    }
